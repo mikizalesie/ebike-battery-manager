@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>eBike Battery Manager PRO v5</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body{font-family:Arial;background:#f5f5f5;margin:20px}
+.card{background:#fff;padding:15px;margin-bottom:15px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px}
+button,input,select{padding:8px;margin:4px}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #ddd;padding:6px;text-align:center}
+canvas{max-height:300px}
+</style>
+</head>
+<body>
+
+<h1>🚴 eBike Battery Manager PRO v7</h1>
+<div class="card">
+<button onclick="showPage('dashboard')">🏠 Dashboard</button>
+<button onclick="showPage('history')">📋 Historia</button>
+<button onclick="showPage('admin')">⚙️ Administracja</button>
+</div>
+<div id="dashboardPage">
+
+
+
+<div class="grid" id="kpis"></div>
+
+<div class="card">
+<h2>Dodaj przejazd</h2>
+<select id="rideBattery"></select>
+<input id="rideOdo" type="number" placeholder="Aktualny ODO">
+<button onclick="addRide()">Zapisz przejazd</button>
+</div>
+
+<div class="card">
+<h2>Dodaj ładowanie</h2>
+
+<div style="margin-bottom:12px">
+<label><b>Bateria</b></label><br>
+<select id="chargeBattery"></select>
+</div>
+
+<div style="margin-bottom:12px">
+<label><b>Przed ładowaniem</b></label><br>
+<select id="before"></select>
+</div>
+
+<div style="margin-bottom:12px">
+<label><b>Po ładowaniu</b></label><br>
+<select id="after"></select>
+</div>
+
+<button onclick="addCharge()">Zapisz ładowanie</button>
+</div>
+
+<div class="grid" id="stats"></div>
+
+<div class="card"><h2>Przebieg baterii</h2><canvas id="kmChart"></canvas></div>
+<div class="card"><h2>Cykle ładowania</h2><canvas id="cycleChart"></canvas></div>
+<div class="card"><h2>Km / cykl</h2><canvas id="effChart"></canvas></div>
+
+</div><div id="historyPage" style="display:none"><div class="card">
+<h2>Historia przejazdów</h2>
+<table id="rides"></table>
+</div>
+
+<div class="card">
+<h2>Historia ładowań</h2>
+<table id="charges"></table>
+</div>
+
+</div></div><div id="adminPage" style="display:none"><div class="card">
+<button onclick="unlockConfig()">🔓 Konfiguracja (PIN)</button>
+<div id="cfg" style="display:none">
+ODO początkowe: <input id="startOdo" type="number">
+Liczba baterii:
+<select id="batteryCount"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+<button onclick="saveConfig()">Zapisz</button>
+</div>
+</div><div class="card"><h2>Administracja</h2>
+<button onclick="exportData()">💾 Eksport danych</button>
+<button onclick="document.getElementById('importFile').click()">📂 Import danych</button>
+<input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)">
+<button onclick="resetApp()">🗑 Reset aplikacji</button>
+</div>
+
+</div>
+<script>
+let db=JSON.parse(localStorage.getItem('ebike_v5'))||{
+ pin:'1234',
+ startOdo:null,
+ batteries:[{name:'Bateria 1',startCycles:0},{name:'Bateria 2',startCycles:0}],
+ rides:[],
+ charges:[]
+};
+
+function save(){localStorage.setItem('ebike_v5',JSON.stringify(db));render();}
+
+function fillBars(){
+ let h='<option value="">wybierz</option>';
+ for(let i=0;i<=10;i++) h+=`<option value="${i}">${i}/10</option>`;
+ before.innerHTML=h; after.innerHTML=h;
+}
+fillBars();
+
+function unlockConfig(){
+ let p=prompt('PIN administratora');
+ if(p===db.pin) cfg.style.display='block';
+}
+
+function saveConfig(){
+ db.startOdo=Number(startOdo.value);
+ let cnt=Number(batteryCount.value);
+ while(db.batteries.length<cnt) db.batteries.push({name:'Bateria '+(db.batteries.length+1),startCycles:0});
+ db.batteries=db.batteries.slice(0,cnt);
+ save();
+if(document.getElementById('cfg')) document.getElementById('cfg').style.display='none';
+}
+
+function addRide(){
+ const odo=Number(rideOdo.value);
+ const bat=Number(rideBattery.value);
+ let dist=0;
+
+ if(db.rides.length===0){
+   dist=(db.startOdo!==null)?Math.max(0,odo-db.startOdo):0;
+   if(db.startOdo===null) db.startOdo=odo;
+ } else {
+   dist=Math.max(0,odo-db.rides[db.rides.length-1].odo);
+ }
+
+ db.rides.push({date:new Date().toLocaleString(),battery:bat,odo,distance:dist});
+ save();
+}
+
+function addCharge(){
+ const b=before.value;
+ const a=after.value;
+
+ if(b==='' || a==='') return alert('Wybierz stan przed i po ładowaniu');
+
+ const beforeVal=Number(b);
+ const afterVal=Number(a);
+
+ if(afterVal<=beforeVal) return alert('Stan po ładowaniu musi być większy');
+
+ db.charges.push({
+   date:new Date().toLocaleString(),
+   battery:Number(chargeBattery.value),
+   cycle:(afterVal-beforeVal)/10
+ });
+ save();
+}
+
+function batteryKm(id){return db.rides.filter(r=>r.battery===id).reduce((s,r)=>s+r.distance,0);}
+function batteryCycles(id){return db.batteries[id].startCycles+db.charges.filter(c=>c.battery===id).reduce((s,c)=>s+c.cycle,0);}
+
+function exportData(){
+ const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);
+ a.download='ebike_backup.json';
+ a.click();
+}
+
+function importData(e){
+ const f=e.target.files[0]; if(!f) return;
+ const r=new FileReader();
+ r.onload=x=>{db=JSON.parse(x.target.result);save();};
+ r.readAsText(f);
+}
+
+function resetApp(){
+ let p=prompt('PIN administratora');
+ if(p!==db.pin) return alert('Błędny PIN');
+ if(confirm('Usunąć wszystkie dane?')){
+   localStorage.removeItem('ebike_v5');
+   location.reload();
+ }
+}
+
+let kmChart,cycleChart,effChart;
+
+function render(){
+ startOdo.value=db.startOdo??'';
+ batteryCount.value=db.batteries.length;
+
+ const rb=rideBattery.value, cb=chargeBattery.value;
+
+ let opts='', labels=[], kms=[], cyc=[], eff=[];
+ let statsHtml='';
+ let totalKm=0,totalCycles=0,maxKm=0,maxIdx=0,maxEff=0,maxEffIdx=0;
+
+ db.batteries.forEach((b,i)=>{
+   opts+=`<option value="${i}">${b.name}</option>`;
+   const km=batteryKm(i);
+   const cy=batteryCycles(i);
+   const ef=cy>0?km/cy:0;
+
+   totalKm+=km; totalCycles+=cy;
+   if(km>maxKm){maxKm=km;maxIdx=i;}
+   if(ef>maxEff){maxEff=ef;maxEffIdx=i;}
+
+   labels.push(b.name); kms.push(km); cyc.push(cy); eff.push(ef);
+
+   statsHtml+=`<div class="card"><h3>${b.name}</h3>Przebieg: ${km.toFixed(1)} km<br>Cykle: ${cy.toFixed(2)}<br>Km/cykl: ${ef.toFixed(1)}</div>`;
+ });
+
+ rideBattery.innerHTML=opts;
+ chargeBattery.innerHTML=opts;
+ if(rb!=='') rideBattery.value=rb;
+ if(cb!=='') chargeBattery.value=cb;
+
+ stats.innerHTML=statsHtml;
+
+ kpis.innerHTML=`
+ <div class="card"><b>Łączny przebieg</b><br>${totalKm.toFixed(1)} km</div>
+ <div class="card"><b>Łączne cykle</b><br>${totalCycles.toFixed(2)}</div>
+ <div class="card"><b>Najczęściej używana</b><br>${db.batteries[maxIdx]?.name||'-'}</div>
+ <div class="card"><b>Najwydajniejsza</b><br>${db.batteries[maxEffIdx]?.name||'-'}</div>`;
+
+ rides.innerHTML='<tr><th>Data</th><th>Bateria</th><th>ODO</th><th>Dystans</th></tr>';
+ [...db.rides].reverse().forEach(r=>rides.innerHTML+=`<tr><td>${r.date}</td><td>${db.batteries[r.battery].name}</td><td>${r.odo}</td><td>${r.distance}</td></tr>`);
+
+ charges.innerHTML='<tr><th>Data</th><th>Bateria</th><th>Cykl</th></tr>';
+ [...db.charges].reverse().forEach(c=>charges.innerHTML+=`<tr><td>${c.date}</td><td>${db.batteries[c.battery].name}</td><td>${c.cycle.toFixed(2)}</td></tr>`);
+
+ if(kmChart) kmChart.destroy();
+ if(cycleChart) cycleChart.destroy();
+ if(effChart) effChart.destroy();
+
+ kmChart=new Chart(document.getElementById('kmChart'),{type:'bar',data:{labels,datasets:[{label:'km',data:kms}]}});
+ cycleChart=new Chart(document.getElementById('cycleChart'),{type:'bar',data:{labels,datasets:[{label:'cykle',data:cyc}]}});
+ effChart=new Chart(document.getElementById('effChart'),{type:'bar',data:{labels,datasets:[{label:'km/cykl',data:eff}]}});
+}
+render();
+</script>
+
+</div>
+<script>
+function showPage(page){
+ document.getElementById('dashboardPage').style.display = (page==='dashboard') ? 'block' : 'none';
+ document.getElementById('historyPage').style.display = (page==='history') ? 'block' : 'none';
+ document.getElementById('adminPage').style.display = (page==='admin') ? 'block' : 'none';
+}
+</script>
+</body>
+</html>
