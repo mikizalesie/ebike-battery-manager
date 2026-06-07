@@ -334,7 +334,18 @@ let db=JSON.parse(localStorage.getItem('ebike_v5'))||{
  charges:[]
 };
 
-function save(){localStorage.setItem('ebike_v5',JSON.stringify(db));render();}
+async function save(){
+
+  localStorage.setItem(
+    'ebike_v5',
+    JSON.stringify(db)
+  );
+
+  await syncToCloud();
+
+  render();
+
+}
 
 function fillBars(){
  let h='<option value="">wybierz</option>';
@@ -599,6 +610,34 @@ const provider = new GoogleAuthProvider();
 
 const dbFirestore = getFirestore(app);
 
+async function syncToCloud(){
+
+    if(!window.currentUser) return;
+
+    try{
+
+        await setDoc(
+            doc(
+                dbFirestore,
+                "users",
+                window.currentUser.uid
+            ),
+            {
+                data: db,
+                updated: Date.now()
+            }
+        );
+
+        console.log("Cloud Sync OK");
+
+    }catch(err){
+
+        console.error("Cloud Sync Error", err);
+
+    }
+
+}
+
 window.loginGoogle = async function(){
 
   try{
@@ -619,16 +658,39 @@ window.logoutGoogle = async function(){
 
 };
 
-onAuthStateChanged(auth,(user)=>{
+onAuthStateChanged(auth, async (user)=>{
 
   const panel = document.getElementById("userPanel");
 
   if(user){
 
-window.currentUser = user;
+    window.currentUser = user;
 
-console.log("UID:", user.uid);
+    console.log("UID:", user.uid);
 
+    const cloudDoc = await getDoc(
+      doc(
+        dbFirestore,
+        "users",
+        user.uid
+      )
+    );
+
+    if(cloudDoc.exists()){
+
+      const cloudData = cloudDoc.data();
+
+      if(cloudData.data){
+
+        Object.assign(db, cloudData.data);
+
+        render();
+
+        console.log("Cloud Restore OK");
+
+      }
+
+    }
 
     panel.innerHTML = `
       <div style="color:white;">
