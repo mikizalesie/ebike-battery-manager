@@ -555,5 +555,26 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAb6TDlhGLQEZ6g5kuEIgfzhJr-oQN_od0",
+  authDomain: "ebike-battery-manager-pro.firebaseapp.com",
+  projectId: "ebike-battery-manager-pro",
+  storageBucket: "ebike-battery-manager-pro.firebasestorage.app",
+  messagingSenderId: "451632411170",
+  appId: "1:451632411170:web:0a8872ee0e44008693507b"
+};
+
+const app = initializeApp(firebaseConfig);
+
+console.log("Firebase OK");
+
+</script>
+
+
 </body>
 </html>
