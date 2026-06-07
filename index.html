@@ -244,6 +244,12 @@ Battery Analytics & Lifecycle Tracking
 
 </div>
 
+<div id="userPanel" style="margin-top:15px;">
+    <button onclick="loginGoogle()">
+        👤 Zaloguj przez Google
+    </button>
+</div>
+
 <div class="nav">
 <button onclick="showPage('dashboard')">🏠 Dashboard</button>
 <button onclick="showPage('history')">📋 Historia</button>
@@ -560,6 +566,15 @@ if ('serviceWorker' in navigator) {
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyAb6TDlhGLQEZ6g5kuEIgfzhJr-oQN_od0",
   authDomain: "ebike-battery-manager-pro.firebaseapp.com",
@@ -571,10 +586,60 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-console.log("Firebase OK");
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+window.loginGoogle = async function(){
+
+  try{
+
+    await signInWithPopup(auth, provider);
+
+  }catch(err){
+
+    alert(err.message);
+
+  }
+
+};
+
+window.logoutGoogle = async function(){
+
+  await signOut(auth);
+
+};
+
+onAuthStateChanged(auth,(user)=>{
+
+  const panel = document.getElementById("userPanel");
+
+  if(user){
+
+    panel.innerHTML = `
+      <div style="color:white;">
+        👤 <b>${user.displayName}</b><br>
+        ${user.email}<br><br>
+        <button onclick="logoutGoogle()">
+          Wyloguj
+        </button>
+      </div>
+    `;
+
+  }else{
+
+    panel.innerHTML = `
+      <button onclick="loginGoogle()">
+        👤 Zaloguj przez Google
+      </button>
+    `;
+
+  }
+
+});
+
+console.log("Firebase Auth OK");
 
 </script>
-
 
 </body>
 </html>
