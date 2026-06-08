@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 222
+VERSION TEST 223
 </div>
 
 
@@ -331,7 +331,7 @@ Liczba baterii:
 </div>
 <script>
 let db=JSON.parse(localStorage.getItem('ebike_v5'))||{
- pin:'1234',
+ 
  startOdo:null,
  batteries:[{name:'Bateria 1',startCycles:0},{name:'Bateria 2',startCycles:0}],
  rides:[],
@@ -363,8 +363,16 @@ function fillBars(){
 fillBars();
 
 function unlockConfig(){
- let p=prompt('PIN administratora');
- if(p===db.pin) cfg.style.display='block';
+
+    if(
+        window.currentUser &&
+        window.currentUser.email === "michal.mikinka@gmail.com"
+    ){
+        cfg.style.display='block';
+    }else{
+        alert("Brak uprawnień administratora");
+    }
+
 }
 
 function saveConfig(){
