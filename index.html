@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 111
+VERSION TEST 222
 </div>
 
 
@@ -598,7 +598,8 @@ import {
   getFirestore,
   doc,
   setDoc,
-  getDoc
+  getDoc,
+  onSnapshot
 }
 from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
@@ -706,6 +707,45 @@ onAuthStateChanged(auth, async (user)=>{
       }
 
     }
+
+onSnapshot(
+  doc(
+    dbFirestore,
+    "users",
+    user.uid
+  ),
+  (snapshot)=>{
+
+    if(!snapshot.exists()) return;
+
+    const cloudData = snapshot.data();
+
+    if(cloudData.data){
+
+const cloudJson =
+  JSON.stringify(cloudData.data);
+
+const localJson =
+  JSON.stringify(db);
+
+if(cloudJson !== localJson){
+
+  Object.assign(
+    db,
+    cloudData.data
+  );
+
+  render();
+
+  console.log("LIVE SYNC UPDATE");
+}
+
+      console.log("LIVE SYNC UPDATE");
+
+    }
+
+  }
+);
 
     panel.innerHTML = `
       <div style="color:white;">
