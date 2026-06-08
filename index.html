@@ -336,6 +336,8 @@ let db=JSON.parse(localStorage.getItem('ebike_v5'))||{
 
 async function save(){
 
+  console.log("SAVE CALLED");
+
   localStorage.setItem(
     'ebike_v5',
     JSON.stringify(db)
@@ -612,9 +614,16 @@ const dbFirestore = getFirestore(app);
 
 async function syncToCloud(){
 
-    if(!window.currentUser) return;
+    console.log("SYNC START");
+
+    if(!window.currentUser){
+        console.log("NO USER");
+        return;
+    }
 
     try{
+
+        console.log("WRITING TO FIRESTORE");
 
         await setDoc(
             doc(
