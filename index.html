@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 225
+VERSION TEST 226
 </div>
 
 
@@ -563,9 +563,20 @@ function showPage(page){
 
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js')
-    .then(() => console.log('Service Worker OK'))
+
+  navigator.serviceWorker
+    .register('service-worker.js')
+    .then(reg => {
+
+      console.log('Service Worker OK');
+
+      reg.update();
+
+      console.log('Service Worker Update Check');
+
+    })
     .catch(err => console.error(err));
+
 }
 </script>
 
