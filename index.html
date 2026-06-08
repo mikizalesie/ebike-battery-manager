@@ -227,6 +227,10 @@ body{
 </head>
 <body>
 
+<div style="color:red;font-size:30px">
+VERSION TEST 111
+</div>
+
 
 <div class="card">
 
@@ -614,7 +618,7 @@ const provider = new GoogleAuthProvider();
 
 const dbFirestore = getFirestore(app);
 
-async function syncToCloud(){
+window.syncToCloud = async function(){
 
     console.log("SYNC START");
 
