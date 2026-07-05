@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 9
+VERSION TEST 05/07/2026 9a
 </div>
 
 
@@ -318,8 +318,16 @@ Battery Analytics & Lifecycle Tracking
 <div id="cfg" style="display:none">
 ODO początkowe: <input id="startOdo" type="number">
 Liczba baterii:
-<select id="batteryCount"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+Liczba baterii:
+<select id="batteryCount" onchange="updateBatteryCountPreview()">
+  <option>1</option>
+  <option>2</option>
+  <option>3</option>
+  <option>4</option>
+</select>
+
 <div id="batteryConfigForms"></div>
+
 <button onclick="saveConfig()">Zapisz</button>
 </div>
 </div><div class="card"><h2>Administracja</h2>
@@ -548,6 +556,43 @@ window.db = db;
 }
 
 let kmChart,cycleChart,effChart;
+
+function updateBatteryCountPreview(){
+
+ const cnt = Math.max(1, Number(batteryCount.value || 1));
+
+ // zapisz aktualnie wpisane dane z widocznych formularzy do pamięci
+ db.batteries.forEach((b,i)=>{
+
+   const name = document.getElementById('batName_'+i);
+   const manufacturer = document.getElementById('batManufacturer_'+i);
+   const model = document.getElementById('batModel_'+i);
+   const serial = document.getElementById('batSerial_'+i);
+   const capacity = document.getElementById('batCapacity_'+i);
+   const color = document.getElementById('batColor_'+i);
+   const cycles = document.getElementById('batCycles_'+i);
+   const maxCycles = document.getElementById('batMaxCycles_'+i);
+
+   if(name) b.name = name.value;
+   if(manufacturer) b.manufacturer = manufacturer.value;
+   if(model) b.model = model.value;
+   if(serial) b.serialNumber = serial.value;
+   if(capacity) b.capacityWh = Number(capacity.value);
+   if(color) b.color = color.value;
+   if(cycles) b.startCycles = Number(cycles.value);
+   if(maxCycles) b.maxCycles = Number(maxCycles.value);
+
+ });
+
+ while(db.batteries.length < cnt){
+   db.batteries.push(createBattery(db.batteries.length));
+ }
+
+ db.batteries = db.batteries.slice(0,cnt);
+
+ renderBatteryConfigForms();
+}
+
 
 function renderBatteryConfigForms(){
  if(!document.getElementById('batteryConfigForms')) return;
