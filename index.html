@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 8
+VERSION TEST 05/07/2026 9
 </div>
 
 
@@ -356,6 +356,8 @@ let db=JSON.parse(localStorage.getItem('ebike_v5'))||{
  charges:[]
 };
 
+window.db = db;
+
 async function save(){
 
 alert("NOWA SAVE");
@@ -436,7 +438,6 @@ const color = document.getElementById('batColor_'+i);
    if(model) b.model = model.value;
    if(serial) b.serialNumber = serial.value;
    if(capacity) b.capacityWh = Number(capacity.value);
-if(color) b.color = color.value;
    if(cycles) b.startCycles = Number(cycles.value);
 
  });
@@ -529,6 +530,8 @@ async function resetApp(){
    charges: []
  };
 
+window.db = db;
+
  localStorage.setItem('ebike_v5', JSON.stringify(db));
 
  if(typeof window.syncToCloud === 'function'){
@@ -615,10 +618,7 @@ let health = Math.max(60, Math.min(100, 100 - cy * 0.15));
   statsHtml+=`
 <div class="card batteryCard">
 
-<h3>
-<span style="color:${b.color || '#4CAF50'}">🔋</span>
-${b.name}
-</h3>
+<h3>🔋 ${b.name}</h3>
 
 <div style="color:#94A3B8;margin-bottom:14px">
 ${b.manufacturer || 'Producent nieuzupełniony'} ${b.model || ''}
@@ -833,9 +833,9 @@ window.syncToCloud = async function(){
                 window.currentUser.uid
             ),
             {
-                data: db,
-                updated: Date.now()
-            }
+  data: window.db,
+  updated: Date.now()
+}
         );
 
         console.log("Cloud Sync OK");
