@@ -610,7 +610,7 @@ if(!b.color) b.color = '#22C55E';
 
 const batteryColor = b.color || '#22C55E';
 const health = Math.max(60, Math.min(100, 100 - cy * 0.15));
-const healthText = health >= 90 ? 'Excellent' : health >= 80 ? 'Good' : health >= 70 ? 'Fair' : 'Service';
+const healthText = health >= 90 ? 'Bardzo dobra' : health >= 80 ? 'Dobra' : health >= 70 ? 'Średnia' : 'Serwis';
 const remainingCycles = Math.max(0, 800 - cy);
 const estimatedKmLeft = ef > 0 ? remainingCycles * ef : 0;
 
