@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 10b
+VERSION TEST 05/07/2026 10c
 </div>
 
 
@@ -762,6 +762,34 @@ function calculateBatteryHealth(index){
  };
 }
 
+function formatBatteryDate(dateStr){
+ if(!dateStr) return '-';
+
+ const d = new Date(dateStr);
+
+ if(isNaN(d.getTime())) return '-';
+
+ return d.toLocaleDateString('pl-PL');
+}
+
+function batteryAgeText(dateStr){
+ if(!dateStr) return '-';
+
+ const d = new Date(dateStr);
+ const now = new Date();
+
+ if(isNaN(d.getTime())) return '-';
+
+ const diffDays = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+ const years = Math.floor(diffDays / 365);
+ const months = Math.floor((diffDays % 365) / 30);
+
+ if(years <= 0 && months <= 0) return 'poniżej 1 miesiąca';
+ if(years <= 0) return months + ' mies.';
+ if(months <= 0) return years + ' lat';
+
+ return years + ' lat ' + months + ' mies.';
+}
 
 function render(){
  startOdo.value=db.startOdo??'';
@@ -827,11 +855,25 @@ ${b.manufacturer || 'Producent nieuzupełniony'} ${b.model || ''}
 </div>
 
 <div style="font-size:13px;color:#94A3B8;margin-bottom:14px">
+
 <div>Nr seryjny</div>
 <b style="color:white">${b.serialNumber || '-'}</b>
+
 <br><br>
+
 <div>Pojemność</div>
 <b style="color:white">${b.capacityWh || '-'} Wh</b>
+
+<br><br>
+
+<div>Data zakupu / rozpoczęcia użytkowania</div>
+<b style="color:white">${formatBatteryDate(b.purchaseDate)}</b>
+
+<br><br>
+
+<div>Wiek baterii</div>
+<b style="color:white">${batteryAgeText(b.purchaseDate)}</b>
+
 </div>
 
 <hr style="border:0;border-top:1px solid #2b3a55;margin:16px 0">
