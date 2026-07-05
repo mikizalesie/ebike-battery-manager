@@ -403,9 +403,9 @@ function createBattery(index){
    model:'',
    serialNumber:'',
    capacityWh:500,
-   startCycles:0
- };
-}
+   startCycles:0,
+   color:'#4CAF50'
+};
 
 
 
@@ -428,6 +428,7 @@ function saveConfig(){
    const model = document.getElementById('batModel_'+i);
    const serial = document.getElementById('batSerial_'+i);
    const capacity = document.getElementById('batCapacity_'+i);
+const color = document.getElementById('batColor_'+i);
    const cycles = document.getElementById('batCycles_'+i);
 
    if(name) b.name = name.value;
@@ -435,6 +436,7 @@ function saveConfig(){
    if(model) b.model = model.value;
    if(serial) b.serialNumber = serial.value;
    if(capacity) b.capacityWh = Number(capacity.value);
+if(color) b.color = color.value;
    if(cycles) b.startCycles = Number(cycles.value);
 
  });
@@ -565,6 +567,19 @@ function renderBatteryConfigForms(){
      <label>Pojemność [Wh]</label>
      <input id="batCapacity_${i}" type="number" value="${b.capacityWh || 500}">
 
+<label>Kolor baterii</label>
+
+<input
+id="batColor_${i}"
+type="color"
+value="${b.color || '#4CAF50'}"
+style="
+width:100%;
+height:42px;
+padding:3px;
+cursor:pointer;
+border-radius:8px;">
+
      <label>Początkowa liczba cykli</label>
      <input id="batCycles_${i}" type="number" step="0.1" value="${b.startCycles || 0}">
    </div>`;
@@ -600,7 +615,10 @@ let health = Math.max(60, Math.min(100, 100 - cy * 0.15));
   statsHtml+=`
 <div class="card batteryCard">
 
-<h3>🔋 ${b.name}</h3>
+<h3>
+<span style="color:${b.color || '#4CAF50'}">🔋</span>
+${b.name}
+</h3>
 
 <div style="color:#94A3B8;margin-bottom:14px">
 ${b.manufacturer || 'Producent nieuzupełniony'} ${b.model || ''}
