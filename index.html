@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 7
+VERSION TEST 05/07/2026 8
 </div>
 
 
@@ -591,6 +591,102 @@ function renderBatteryConfigForms(){
  batteryConfigForms.innerHTML = html;
 }
 
+
+function calculateBatteryHealth(index){
+
+ const b = db.batteries[index] || {};
+
+ const km = batteryKm(index);
+ const cy = batteryCycles(index);
+ const ef = cy > 0 ? km / cy : 0;
+
+ const batteryCharges = db.charges.filter(c => Number(c.battery) === index);
+ const batteryRides = db.rides.filter(r => Number(r.battery) === index);
+
+ // 1. Liczba cykli — łagodna kara, bez sztywnego końca życia baterii
+ const cycleScore = Math.max(60, 100 - Math.min(40, cy * 0.04));
+
+ // 2. Średni km / cykl
+ // Jeśli nie ma punktu odniesienia, nie karzemy baterii
+ const referenceEfficiency = b.referenceKmPerCycle || ef || 0;
+
+ let efficiencyScore = 100;
+
+ if(referenceEfficiency > 0 && ef > 0){
+   efficiencyScore = Math.min(100, (ef / referenceEfficiency) * 100);
+ }
+
+ // 3. Głębokość ładowań
+ // Dużo ładowań od bardzo niskiego poziomu do pełna delikatnie obniża wynik
+ let chargeDepthScore = 100;
+
+ if(batteryCharges.length > 0){
+
+   let deepCharges = batteryCharges.filter(c =>
+     Number(c.before) <= 2 && Number(c.after) >= 9
+   ).length;
+
+   let deepChargeRatio = deepCharges / batteryCharges.length;
+
+   chargeDepthScore = Math.max(70, 100 - deepChargeRatio * 20);
+ }
+
+ // 4. Trend wydajności
+ // Na razie delikatny wskaźnik — działa sensownie dopiero przy większej historii
+ let trendScore = 100;
+
+ if(batteryRides.length >= 6){
+
+   const firstRides = batteryRides.slice(0, 3);
+   const lastRides = batteryRides.slice(-3);
+
+   const firstAvg = firstRides.reduce((s,r)=>s + Number(r.distance || 0),0) / firstRides.length;
+   const lastAvg = lastRides.reduce((s,r)=>s + Number(r.distance || 0),0) / lastRides.length;
+
+   if(firstAvg > 0 && lastAvg > 0){
+     trendScore = Math.min(100, (lastAvg / firstAvg) * 100);
+   }
+ }
+
+ // 5. Wiek baterii
+ // Jeśli nie wpiszemy daty zakupu, ten element nie obniża wyniku
+ let ageScore = 100;
+
+ if(b.purchaseDate){
+   const purchase = new Date(b.purchaseDate);
+   const now = new Date();
+
+   if(!isNaN(purchase.getTime())){
+     const ageYears = (now - purchase) / (1000 * 60 * 60 * 24 * 365);
+     ageScore = Math.max(70, 100 - ageYears * 4);
+   }
+ }
+
+ const health =
+   cycleScore * 0.35 +
+   efficiencyScore * 0.25 +
+   chargeDepthScore * 0.15 +
+   trendScore * 0.15 +
+   ageScore * 0.10;
+
+ const healthText =
+   health >= 95 ? 'Bardzo dobra' :
+   health >= 85 ? 'Dobra' :
+   health >= 75 ? 'Średnia' :
+   'Zalecana kontrola';
+
+ return {
+   health,
+   healthText,
+   cycleScore,
+   efficiencyScore,
+   chargeDepthScore,
+   trendScore,
+   ageScore
+ };
+}
+
+
 function render(){
  startOdo.value=db.startOdo??'';
  batteryCount.value=db.batteries.length;
@@ -609,10 +705,19 @@ if(!b.color) b.color = '#22C55E';
    const ef=cy>0?km/cy:0;
 
 const batteryColor = b.color || '#22C55E';
-const health = Math.max(60, Math.min(100, 100 - cy * 0.15));
-const healthText = health >= 90 ? 'Bardzo dobra' : health >= 80 ? 'Dobra' : health >= 70 ? 'Średnia' : 'Serwis';
+
+const healthData = calculateBatteryHealth(i);
+const health = healthData.health;
+const healthText = healthData.healthText;
+
 const remainingCycles = Math.max(0, 800 - cy);
 const estimatedKmLeft = ef > 0 ? remainingCycles * ef : 0;
+
+totalKm+=km; 
+totalCycles+=cy;
+
+if(km>maxKm){maxKm=km;maxIdx=i;}
+if(ef>maxEff){maxEff=ef;maxEffIdx=i;}
 
    totalKm+=km; totalCycles+=cy;
    if(km>maxKm){maxKm=km;maxIdx=i;}
