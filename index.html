@@ -1118,22 +1118,7 @@ function showPage(page){
 </script>
 
 <script>
-if ('serviceWorker' in navigator) {
-
-  navigator.serviceWorker
-    .register('service-worker.js?v=10b')
-    .then(reg => {
-
-      console.log('Service Worker OK - v10b');
-
-      reg.update();
-
-      console.log('Service Worker Update Check - v10b');
-
-    })
-    .catch(err => console.error(err));
-
-}
+console.log('Service Worker wyłączony na czas developmentu');
 </script>
 
 <script type="module">
