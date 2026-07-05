@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 5
+VERSION TEST 05/07/2026 4
 </div>
 
 
@@ -403,10 +403,10 @@ function createBattery(index){
    model:'',
    serialNumber:'',
    capacityWh:500,
-   startCycles:0,
-   color:'#22C55E'
+   startCycles:0
  };
 }
+
 
 
 function saveConfig(){
@@ -584,7 +584,6 @@ function render(){
  let totalKm=0,totalCycles=0,maxKm=0,maxIdx=0,maxEff=0,maxEffIdx=0;
 
  db.batteries.forEach((b,i)=>{
-if(!b.color) b.color = '#22C55E';
    opts+=`<option value="${i}">${b.name}</option>`;
    const km=batteryKm(i);
    const cy=batteryCycles(i);
@@ -599,10 +598,7 @@ if(!b.color) b.color = '#22C55E';
    statsHtml+=`
 <div class="card batteryCard">
 
-<h3>
-<span style="color:${b.color || '#22C55E'}">🔋</span>
-${b.name}
-</h3>
+<h3>🔋 ${b.name}</h3>
 
 <p>
 <b>Przebieg:</b> ${km.toFixed(1)} km
