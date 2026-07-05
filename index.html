@@ -1079,14 +1079,14 @@ function showPage(page){
 if ('serviceWorker' in navigator) {
 
   navigator.serviceWorker
-    .register('service-worker.js')
+    .register('service-worker.js?v=10b')
     .then(reg => {
 
-      console.log('Service Worker OK');
+      console.log('Service Worker OK - v10b');
 
       reg.update();
 
-      console.log('Service Worker Update Check');
+      console.log('Service Worker Update Check - v10b');
 
     })
     .catch(err => console.error(err));
