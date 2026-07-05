@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 6
+VERSION TEST 05/07/2026 7
 </div>
 
 
@@ -589,6 +589,8 @@ function render(){
    const cy=batteryCycles(i);
    const ef=cy>0?km/cy:0;
 
+let health = Math.max(60, Math.min(100, 100 - cy * 0.15));
+
    totalKm+=km; totalCycles+=cy;
    if(km>maxKm){maxKm=km;maxIdx=i;}
    if(ef>maxEff){maxEff=ef;maxEffIdx=i;}
@@ -632,6 +634,30 @@ ${b.manufacturer || 'Producent nieuzupełniony'} ${b.model || ''}
 <div style="font-size:22px">⚡</div>
 <div style="font-size:22px;font-weight:bold;color:#0A84FF">${ef.toFixed(0)}</div>
 <div style="font-size:12px;color:#94A3B8">km/cykl</div>
+</div>
+
+</div>
+
+<div style="margin-top:18px">
+
+<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+<span>🔋 Kondycja baterii</span>
+<b>${health.toFixed(0)}%</b>
+</div>
+
+<div style="
+height:10px;
+background:#2b3a55;
+border-radius:20px;
+overflow:hidden;">
+
+<div style="
+width:${health}%;
+height:100%;
+background:linear-gradient(90deg,#00D26A,#8EFF00);
+border-radius:20px;">
+</div>
+
 </div>
 
 </div>
