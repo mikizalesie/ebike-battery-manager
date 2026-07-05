@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 6
+VERSION TEST 05/07/2026 6a
 </div>
 
 
@@ -698,11 +698,19 @@ document.getElementById("heroStats").innerHTML = "";
  charges.innerHTML='<tr><th>Data</th><th>Bateria</th><th>Cykl</th></tr>';
  [...db.charges].reverse().forEach(c=>charges.innerHTML+=`<tr><td>${c.date}</td><td>${db.batteries[c.battery].name}</td><td>${c.cycle.toFixed(2)}</td></tr>`);
 
- if(kmChart) kmChart.destroy();
- if(cycleChart) cycleChart.destroy();
- if(effChart) effChart.destroy();
+ const kmCanvas = document.getElementById('kmChart');
+const cycleCanvas = document.getElementById('cycleChart');
+const effCanvas = document.getElementById('effChart');
 
- kmkmChart=new Chart(document.getElementById('kmChart'),{
+const oldKmChart = Chart.getChart(kmCanvas);
+const oldCycleChart = Chart.getChart(cycleCanvas);
+const oldEffChart = Chart.getChart(effCanvas);
+
+if(oldKmChart) oldKmChart.destroy();
+if(oldCycleChart) oldCycleChart.destroy();
+if(oldEffChart) oldEffChart.destroy();
+
+kmChart = new Chart(kmCanvas,{
  type:'bar',
  data:{
   labels,
@@ -716,7 +724,7 @@ document.getElementById("heroStats").innerHTML = "";
  }
 });
 
-cycleChart=new Chart(document.getElementById('cycleChart'),{
+cycleChart = new Chart(cycleCanvas,{
  type:'bar',
  data:{
   labels,
@@ -730,7 +738,7 @@ cycleChart=new Chart(document.getElementById('cycleChart'),{
  }
 });
 
-effChart=new Chart(document.getElementById('effChart'),{
+effChart = new Chart(effCanvas,{
  type:'bar',
  data:{
   labels,
@@ -743,6 +751,8 @@ effChart=new Chart(document.getElementById('effChart'),{
   }]
  }
 });
+
+
 renderBatteryConfigForms();
 }
 render();
