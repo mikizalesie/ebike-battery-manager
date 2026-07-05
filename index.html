@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 10a
+VERSION TEST 05/07/2026 10b
 </div>
 
 
@@ -1131,6 +1131,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
+provider.setCustomParameters({
+  prompt: 'select_account'
+});
+
 const dbFirestore = getFirestore(app);
 
 window.syncToCloud = async function(){
@@ -1172,14 +1176,19 @@ window.loginGoogle = async function(){
 
   try{
 
-    await signInWithPopup(auth, provider);
+    const loginProvider = new GoogleAuthProvider();
+
+    loginProvider.setCustomParameters({
+      prompt: 'select_account'
+    });
+
+    await signInWithPopup(auth, loginProvider);
 
   }catch(err){
 
     alert(err.message);
 
   }
-
 };
 
 window.logoutGoogle = async function(){
