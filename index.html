@@ -438,33 +438,41 @@ function importData(e){
 }
 
 async function resetApp(){
- let p = prompt('PIN administratora');
- if(p !== db.pin) return alert('Błędny PIN');
 
- if(confirm('Usunąć wszystkie dane aplikacji?')){
-   const currentPin = db.pin;
+ const confirmReset = confirm(
+   'Czy na pewno chcesz zresetować aplikację?\n\n' +
+   'Ta operacja usunie wszystkie dane:\n' +
+   '- historię przejazdów,\n' +
+   '- historię ładowań,\n' +
+   '- przebieg baterii,\n' +
+   '- cykle ładowania.\n\n' +
+   'Tych danych nie będzie można odzyskać.'
+ );
 
-   db = {
-     pin: currentPin,
-     startOdo: 0,
-     batteries: [
-       {name:'Bateria 1', startCycles:0},
-       {name:'Bateria 2', startCycles:0}
-     ],
-     rides: [],
-     charges: []
-   };
+ if(!confirmReset) return;
 
-   localStorage.setItem('ebike_v5', JSON.stringify(db));
+ const currentPin = db.pin;
 
-   if(typeof window.syncToCloud === 'function'){
-     await window.syncToCloud();
-   }
+ db = {
+   pin: currentPin,
+   startOdo: 0,
+   batteries: [
+     {name:'Bateria 1', startCycles:0},
+     {name:'Bateria 2', startCycles:0}
+   ],
+   rides: [],
+   charges: []
+ };
 
-   render();
+ localStorage.setItem('ebike_v5', JSON.stringify(db));
 
-   alert('Aplikacja została zresetowana.');
+ if(typeof window.syncToCloud === 'function'){
+   await window.syncToCloud();
  }
+
+ render();
+
+ alert('Aplikacja została zresetowana.');
 }
 
 let kmChart,cycleChart,effChart;
