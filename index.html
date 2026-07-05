@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 10
+VERSION TEST 05/07/2026 10a
 </div>
 
 
@@ -351,7 +351,8 @@ let db=JSON.parse(localStorage.getItem('ebike_v5'))||{
   capacityWh:500,
   startCycles:0,
   color:'#22C55E',
-  maxCycles:800
+   maxCycles:800,
+   purchaseDate:''
 }
 ],
  rides:[],
@@ -534,15 +535,16 @@ db = {
    pin: currentPin,
    startOdo: 0,
    batteries: [
-     {
+       {
        name:'Bateria 1',
        manufacturer:'',
        model:'',
        serialNumber:'',
        capacityWh:500,
        startCycles:0,
-       color:'#22C55E'
-purchaseDate:''
+       color:'#22C55E',
+       maxCycles:800,
+       purchaseDate:''
      }
    ],
    rides: [],
