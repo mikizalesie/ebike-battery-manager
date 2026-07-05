@@ -437,12 +437,33 @@ function importData(e){
  r.readAsText(f);
 }
 
-function resetApp(){
- let p=prompt('PIN administratora');
- if(p!==db.pin) return alert('Błędny PIN');
- if(confirm('Usunąć wszystkie dane?')){
-   localStorage.removeItem('ebike_v5');
-   location.reload();
+async function resetApp(){
+ let p = prompt('PIN administratora');
+ if(p !== db.pin) return alert('Błędny PIN');
+
+ if(confirm('Usunąć wszystkie dane aplikacji?')){
+   const currentPin = db.pin;
+
+   db = {
+     pin: currentPin,
+     startOdo: null,
+     batteries: [
+       {name:'Bateria 1', startCycles:0},
+       {name:'Bateria 2', startCycles:0}
+     ],
+     rides: [],
+     charges: []
+   };
+
+   localStorage.setItem('ebike_v5', JSON.stringify(db));
+
+   if(typeof window.syncToCloud === 'function'){
+     await window.syncToCloud();
+   }
+
+   render();
+
+   alert('Aplikacja została zresetowana.');
  }
 }
 
