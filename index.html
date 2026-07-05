@@ -7,7 +7,7 @@
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0A84FF">
-<title>eBike Battery Manager PRO v5</title>
+<title>eBike Battery Manager PRO</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root{
@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 3
+VERSION TEST 05/07/2026 4
 </div>
 
 
@@ -319,6 +319,7 @@ Battery Analytics & Lifecycle Tracking
 ODO początkowe: <input id="startOdo" type="number">
 Liczba baterii:
 <select id="batteryCount"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+<div id="batteryConfigForms"></div>
 <button onclick="saveConfig()">Zapisz</button>
 </div>
 </div><div class="card"><h2>Administracja</h2>
@@ -333,7 +334,24 @@ Liczba baterii:
 let db=JSON.parse(localStorage.getItem('ebike_v5'))||{
  
  startOdo:null,
- batteries:[{name:'Bateria 1',startCycles:0},{name:'Bateria 2',startCycles:0}],
+ batteries:[
+ {
+   name:'Bateria 1',
+   manufacturer:'',
+   model:'',
+   serialNumber:'',
+   capacityWh:500,
+   startCycles:0
+ },
+ {
+   name:'Bateria 2',
+   manufacturer:'',
+   model:'',
+   serialNumber:'',
+   capacityWh:500,
+   startCycles:0
+ }
+],
  rides:[],
  charges:[]
 };
@@ -350,6 +368,8 @@ alert("NOWA SAVE");
   );
 
   await syncToCloud();
+
+
 
   render();
 
@@ -375,13 +395,56 @@ function unlockConfig(){
 
 }
 
+
+function createBattery(index){
+ return {
+   name:'Bateria '+(index+1),
+   manufacturer:'',
+   model:'',
+   serialNumber:'',
+   capacityWh:500,
+   startCycles:0
+ };
+}
+
+
+
 function saveConfig(){
- db.startOdo=Number(startOdo.value);
- let cnt=Number(batteryCount.value);
- while(db.batteries.length<cnt) db.batteries.push({name:'Bateria '+(db.batteries.length+1),startCycles:0});
- db.batteries=db.batteries.slice(0,cnt);
+
+ db.startOdo = Number(startOdo.value);
+
+ let cnt = Number(batteryCount.value);
+
+ while(db.batteries.length < cnt){
+   db.batteries.push(createBattery(db.batteries.length));
+ }
+
+ db.batteries = db.batteries.slice(0,cnt);
+
+ db.batteries.forEach((b,i)=>{
+
+   const name = document.getElementById('batName_'+i);
+   const manufacturer = document.getElementById('batManufacturer_'+i);
+   const model = document.getElementById('batModel_'+i);
+   const serial = document.getElementById('batSerial_'+i);
+   const capacity = document.getElementById('batCapacity_'+i);
+   const cycles = document.getElementById('batCycles_'+i);
+
+   if(name) b.name = name.value;
+   if(manufacturer) b.manufacturer = manufacturer.value;
+   if(model) b.model = model.value;
+   if(serial) b.serialNumber = serial.value;
+   if(capacity) b.capacityWh = Number(capacity.value);
+   if(cycles) b.startCycles = Number(cycles.value);
+
+ });
+
  save();
-if(document.getElementById('cfg')) document.getElementById('cfg').style.display='none';
+
+ if(document.getElementById('cfg')){
+   document.getElementById('cfg').style.display='none';
+ }
+
 }
 
 function addRide(){
@@ -476,6 +539,39 @@ async function resetApp(){
 }
 
 let kmChart,cycleChart,effChart;
+
+function renderBatteryConfigForms(){
+ if(!document.getElementById('batteryConfigForms')) return;
+
+ let html = '';
+
+ db.batteries.forEach((b,i)=>{
+   html += `
+   <div class="card batteryCard" style="margin-top:15px">
+     <h3>🔋 Bateria ${i+1}</h3>
+
+     <label>Nazwa baterii</label>
+     <input id="batName_${i}" value="${b.name || ''}">
+
+     <label>Producent</label>
+     <input id="batManufacturer_${i}" value="${b.manufacturer || ''}" placeholder="np. Bosch, Yamaha, Shimano">
+
+     <label>Model</label>
+     <input id="batModel_${i}" value="${b.model || ''}" placeholder="np. PowerTube 625">
+
+     <label>Numer seryjny</label>
+     <input id="batSerial_${i}" value="${b.serialNumber || ''}" placeholder="SN">
+
+     <label>Pojemność [Wh]</label>
+     <input id="batCapacity_${i}" type="number" value="${b.capacityWh || 500}">
+
+     <label>Początkowa liczba cykli</label>
+     <input id="batCycles_${i}" type="number" step="0.1" value="${b.startCycles || 0}">
+   </div>`;
+ });
+
+ batteryConfigForms.innerHTML = html;
+}
 
 function render(){
  startOdo.value=db.startOdo??'';
@@ -577,6 +673,7 @@ document.getElementById("heroStats").innerHTML = "";
  kmChart=new Chart(document.getElementById('kmChart'),{type:'bar',data:{labels,datasets:[{label:'km',data:kms}]}});
  cycleChart=new Chart(document.getElementById('cycleChart'),{type:'bar',data:{labels,datasets:[{label:'cykle',data:cyc}]}});
  effChart=new Chart(document.getElementById('effChart'),{type:'bar',data:{labels,datasets:[{label:'km/cykl',data:eff}]}});
+renderBatteryConfigForms();
 }
 render();
 </script>
