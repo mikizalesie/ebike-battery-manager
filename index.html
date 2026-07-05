@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 8
+VERSION TEST 05/07/2026 8a
 </div>
 
 
@@ -341,21 +341,13 @@ let db=JSON.parse(localStorage.getItem('ebike_v5'))||{
    model:'',
    serialNumber:'',
    capacityWh:500,
-   startCycles:0
- },
- {
-   name:'Bateria 2',
-   manufacturer:'',
-   model:'',
-   serialNumber:'',
-   capacityWh:500,
-   startCycles:0
+   startCycles:0,
+   color:'#22C55E'
  }
 ],
  rides:[],
  charges:[]
 };
-
 async function save(){
 
 alert("NOWA SAVE");
@@ -520,17 +512,25 @@ async function resetApp(){
 
  const currentPin = db.pin;
 
- db = {
+db = {
    pin: currentPin,
    startOdo: 0,
    batteries: [
-     {name:'Bateria 1', startCycles:0},
-     {name:'Bateria 2', startCycles:0}
+     {
+       name:'Bateria 1',
+       manufacturer:'',
+       model:'',
+       serialNumber:'',
+       capacityWh:500,
+       startCycles:0,
+       color:'#22C55E'
+     }
    ],
    rides: [],
    charges: []
- };
+};
 
+window.db = db;
  localStorage.setItem('ebike_v5', JSON.stringify(db));
 
  if(typeof window.syncToCloud === 'function'){
