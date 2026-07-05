@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 6a
+VERSION TEST 05/07/2026 7
 </div>
 
 
@@ -476,11 +476,13 @@ function addCharge(){
 
  if(afterVal<=beforeVal) return alert('Stan po ładowaniu musi być większy');
 
- db.charges.push({
+db.charges.push({
    date:new Date().toLocaleString(),
    battery:Number(chargeBattery.value),
+   before: beforeVal,
+   after: afterVal,
    cycle:(afterVal-beforeVal)/10
- });
+});
  save();
 }
 
@@ -606,6 +608,12 @@ if(!b.color) b.color = '#22C55E';
    const cy=batteryCycles(i);
    const ef=cy>0?km/cy:0;
 
+const batteryColor = b.color || '#22C55E';
+const health = Math.max(60, Math.min(100, 100 - cy * 0.15));
+const healthText = health >= 90 ? 'Excellent' : health >= 80 ? 'Good' : health >= 70 ? 'Fair' : 'Service';
+const remainingCycles = Math.max(0, 800 - cy);
+const estimatedKmLeft = ef > 0 ? remainingCycles * ef : 0;
+
    totalKm+=km; totalCycles+=cy;
    if(km>maxKm){maxKm=km;maxIdx=i;}
    if(ef>maxEff){maxEff=ef;maxEffIdx=i;}
@@ -616,8 +624,8 @@ cyc.push(cy);
 eff.push(ef);
 colors.push(b.color || '#22C55E');
 
-   statsHtml+=`
-<div class="card batteryCard" style="border-left:8px solid ${b.color || '#22C55E'}">
+statsHtml+=`
+<div class="card batteryCard" style="border-left:8px solid ${batteryColor}">
 
 <h3>
 <span style="
@@ -625,24 +633,88 @@ display:inline-block;
 width:14px;
 height:14px;
 border-radius:50%;
-background:${b.color || '#22C55E'};
+background:${batteryColor};
+box-shadow:0 0 10px ${batteryColor};
 margin-right:8px;
-box-shadow:0 0 10px ${b.color || '#22C55E'};
 "></span>
 ${b.name}
 </h3>
 
-<p>
-<b>Przebieg:</b> ${km.toFixed(1)} km
-</p>
+<div style="color:#94A3B8;margin-bottom:14px">
+${b.manufacturer || 'Producent nieuzupełniony'} ${b.model || ''}
+</div>
 
-<p>
-<b>Cykle:</b> ${cy.toFixed(2)}
-</p>
+<div style="font-size:13px;color:#94A3B8;margin-bottom:14px">
+<div>Nr seryjny</div>
+<b style="color:white">${b.serialNumber || '-'}</b>
+<br><br>
+<div>Pojemność</div>
+<b style="color:white">${b.capacityWh || '-'} Wh</b>
+</div>
 
-<p>
-<b>Km/cykl:</b> ${ef.toFixed(1)}
-</p>
+<hr style="border:0;border-top:1px solid #2b3a55;margin:16px 0">
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+
+<div>
+<div style="font-size:22px">📏</div>
+<div style="font-size:22px;font-weight:bold;color:#0A84FF">${km.toFixed(0)}</div>
+<div style="font-size:12px;color:#94A3B8">km</div>
+</div>
+
+<div>
+<div style="font-size:22px">🔄</div>
+<div style="font-size:22px;font-weight:bold;color:#0A84FF">${cy.toFixed(1)}</div>
+<div style="font-size:12px;color:#94A3B8">cykle</div>
+</div>
+
+<div>
+<div style="font-size:22px">⚡</div>
+<div style="font-size:22px;font-weight:bold;color:#0A84FF">${ef.toFixed(0)}</div>
+<div style="font-size:12px;color:#94A3B8">km/cykl</div>
+</div>
+
+</div>
+
+<hr style="border:0;border-top:1px solid #2b3a55;margin:16px 0">
+
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;font-size:13px">
+
+<div>
+<div style="color:#94A3B8">Pozostałe cykle</div>
+<b>${remainingCycles.toFixed(0)}</b>
+</div>
+
+<div>
+<div style="color:#94A3B8">Szac. pozostały dystans</div>
+<b>${estimatedKmLeft > 0 ? estimatedKmLeft.toFixed(0) + ' km' : '-'}</b>
+</div>
+
+</div>
+
+<div style="margin-top:18px">
+
+<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+<span>🔋 Kondycja baterii</span>
+<b>${health.toFixed(0)}% — ${healthText}</b>
+</div>
+
+<div style="
+height:10px;
+background:#2b3a55;
+border-radius:20px;
+overflow:hidden;">
+
+<div style="
+width:${health}%;
+height:100%;
+background:linear-gradient(90deg,${batteryColor},#8EFF00);
+border-radius:20px;">
+</div>
+
+</div>
+
+</div>
 
 </div>`;
 
@@ -693,10 +765,57 @@ document.getElementById("heroStats").innerHTML = "";
 </div>`;
 
  rides.innerHTML='<tr><th>Data</th><th>Bateria</th><th>ODO</th><th>Dystans</th></tr>';
- [...db.rides].reverse().forEach(r=>rides.innerHTML+=`<tr><td>${r.date}</td><td>${db.batteries[r.battery].name}</td><td>${r.odo}</td><td>${r.distance}</td></tr>`);
 
- charges.innerHTML='<tr><th>Data</th><th>Bateria</th><th>Cykl</th></tr>';
- [...db.charges].reverse().forEach(c=>charges.innerHTML+=`<tr><td>${c.date}</td><td>${db.batteries[c.battery].name}</td><td>${c.cycle.toFixed(2)}</td></tr>`);
+[...db.rides].reverse().forEach(r=>{
+ const bat = db.batteries[r.battery] || {};
+ const color = bat.color || '#22C55E';
+
+ rides.innerHTML += `
+ <tr>
+   <td>${r.date}</td>
+   <td>
+     <span style="
+       display:inline-block;
+       width:12px;
+       height:12px;
+       border-radius:50%;
+       background:${color};
+       box-shadow:0 0 8px ${color};
+       margin-right:6px;
+     "></span>
+     ${bat.name || 'Bateria'}
+   </td>
+   <td>${r.odo}</td>
+   <td>${Number(r.distance).toFixed(1)} km</td>
+ </tr>`;
+});
+
+ charges.innerHTML='<tr><th>Data</th><th>Bateria</th><th>Przed</th><th>Po</th><th>Cykl</th></tr>';
+
+[...db.charges].reverse().forEach(c=>{
+ const bat = db.batteries[c.battery] || {};
+ const color = bat.color || '#22C55E';
+
+ charges.innerHTML += `
+ <tr>
+   <td>${c.date}</td>
+   <td>
+     <span style="
+       display:inline-block;
+       width:12px;
+       height:12px;
+       border-radius:50%;
+       background:${color};
+       box-shadow:0 0 8px ${color};
+       margin-right:6px;
+     "></span>
+     ${bat.name || 'Bateria'}
+   </td>
+   <td>${c.before !== undefined ? c.before + '/10' : '-'}</td>
+   <td>${c.after !== undefined ? c.after + '/10' : '-'}</td>
+   <td>${Number(c.cycle).toFixed(2)}</td>
+ </tr>`;
+});
 
  const kmCanvas = document.getElementById('kmChart');
 const cycleCanvas = document.getElementById('cycleChart');
