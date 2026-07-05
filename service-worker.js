@@ -1,22 +1,38 @@
-const CACHE_NAME = "ebike-pro-v15";
+const CACHE_NAME = "ebike-pro-20260705-8";
 
-self.addEventListener("install", () => {
+const urlsToCache = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./assets/logo.png",
+  "./assets/favicon.png",
+  "./assets/icon-192.png",
+  "./assets/icon-512.png"
+];
+
+self.addEventListener("install", event => {
   self.skipWaiting();
+
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
+  );
 });
 
 self.addEventListener("activate", event => {
   event.waitUntil(
-    clients.claim()
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
+      );
+    }).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("fetch", event => {
-
   event.respondWith(
-
-    fetch(event.request)
-      .catch(() => caches.match(event.request))
-
+    fetch(event.request).catch(() => caches.match(event.request))
   );
-
 });
