@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 9a
+VERSION TEST 05/07/2026 10
 </div>
 
 
@@ -404,10 +404,12 @@ function createBattery(index){
    model:'',
    serialNumber:'',
    capacityWh:500,
-   startCycles:0
+   startCycles:0,
+   color:'#22C55E',
+   maxCycles:800,
+   purchaseDate:''
  };
 }
-
 
 
 function saveConfig(){
@@ -433,6 +435,7 @@ const color = document.getElementById('batColor_'+i);
 const cycles = document.getElementById('batCycles_'+i);
 
 const maxCycles = document.getElementById('batMaxCycles_'+i);
+const purchaseDate = document.getElementById('batPurchaseDate_'+i);
 
    if(name) b.name = name.value;
    if(manufacturer) b.manufacturer = manufacturer.value;
@@ -443,6 +446,8 @@ if(color) b.color = color.value;
 if(cycles) b.startCycles = Number(cycles.value);
 
 if(maxCycles) b.maxCycles = Number(maxCycles.value);
+
+if(purchaseDate) b.purchaseDate = purchaseDate.value;
 
  });
 
@@ -537,6 +542,7 @@ db = {
        capacityWh:500,
        startCycles:0,
        color:'#22C55E'
+purchaseDate:''
      }
    ],
    rides: [],
@@ -573,6 +579,8 @@ function updateBatteryCountPreview(){
    const cycles = document.getElementById('batCycles_'+i);
    const maxCycles = document.getElementById('batMaxCycles_'+i);
 
+const purchaseDate = document.getElementById('batPurchaseDate_'+i);
+
    if(name) b.name = name.value;
    if(manufacturer) b.manufacturer = manufacturer.value;
    if(model) b.model = model.value;
@@ -581,6 +589,8 @@ function updateBatteryCountPreview(){
    if(color) b.color = color.value;
    if(cycles) b.startCycles = Number(cycles.value);
    if(maxCycles) b.maxCycles = Number(maxCycles.value);
+
+if(purchaseDate) b.purchaseDate = purchaseDate.value;
 
  });
 
@@ -635,12 +645,20 @@ function renderBatteryConfigForms(){
 
      <label>Początkowa liczba cykli</label>
      <input id="batCycles_${i}" type="number" step="0.1" value="${b.startCycles || 0}">
+
 <label>Maks. liczba cykli wg producenta</label>
 <input 
  id="batMaxCycles_${i}" 
  type="number" 
  value="${b.maxCycles || 800}" 
  placeholder="np. 500, 700, 800, 1000">
+
+<label>Data zakupu / rozpoczęcia użytkowania</label>
+<input 
+ id="batPurchaseDate_${i}" 
+ type="date" 
+ value="${b.purchaseDate || ''}">
+
    </div>`;
  });
 
@@ -714,7 +732,7 @@ function calculateBatteryHealth(index){
 
    if(!isNaN(purchase.getTime())){
      const ageYears = (now - purchase) / (1000 * 60 * 60 * 24 * 365);
-     ageScore = Math.max(70, 100 - ageYears * 4);
+     ageScore = Math.max(70, 100 - ageYears * 5);
    }
  }
 
