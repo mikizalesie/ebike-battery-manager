@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 5
+VERSION TEST 05/07/2026 6
 </div>
 
 
@@ -595,11 +595,12 @@ function render(){
 
  const rb=rideBattery.value, cb=chargeBattery.value;
 
- let opts='', labels=[], kms=[], cyc=[], eff=[];
+ let opts='', labels=[], kms=[], cyc=[], eff=[], colors=[];
  let statsHtml='';
  let totalKm=0,totalCycles=0,maxKm=0,maxIdx=0,maxEff=0,maxEffIdx=0;
 
  db.batteries.forEach((b,i)=>{
+if(!b.color) b.color = '#22C55E';
    opts+=`<option value="${i}">${b.name}</option>`;
    const km=batteryKm(i);
    const cy=batteryCycles(i);
@@ -609,12 +610,27 @@ function render(){
    if(km>maxKm){maxKm=km;maxIdx=i;}
    if(ef>maxEff){maxEff=ef;maxEffIdx=i;}
 
-   labels.push(b.name); kms.push(km); cyc.push(cy); eff.push(ef);
+   labels.push(b.name);
+kms.push(km);
+cyc.push(cy);
+eff.push(ef);
+colors.push(b.color || '#22C55E');
 
    statsHtml+=`
-<div class="card batteryCard">
+<div class="card batteryCard" style="border-left:8px solid ${b.color || '#22C55E'}">
 
-<h3>🔋 ${b.name}</h3>
+<h3>
+<span style="
+display:inline-block;
+width:14px;
+height:14px;
+border-radius:50%;
+background:${b.color || '#22C55E'};
+margin-right:8px;
+box-shadow:0 0 10px ${b.color || '#22C55E'};
+"></span>
+${b.name}
+</h3>
 
 <p>
 <b>Przebieg:</b> ${km.toFixed(1)} km
@@ -686,9 +702,47 @@ document.getElementById("heroStats").innerHTML = "";
  if(cycleChart) cycleChart.destroy();
  if(effChart) effChart.destroy();
 
- kmChart=new Chart(document.getElementById('kmChart'),{type:'bar',data:{labels,datasets:[{label:'km',data:kms}]}});
- cycleChart=new Chart(document.getElementById('cycleChart'),{type:'bar',data:{labels,datasets:[{label:'cykle',data:cyc}]}});
- effChart=new Chart(document.getElementById('effChart'),{type:'bar',data:{labels,datasets:[{label:'km/cykl',data:eff}]}});
+ kmkmChart=new Chart(document.getElementById('kmChart'),{
+ type:'bar',
+ data:{
+  labels,
+  datasets:[{
+   label:'km',
+   data:kms,
+   backgroundColor:colors,
+   borderColor:colors,
+   borderWidth:1
+  }]
+ }
+});
+
+cycleChart=new Chart(document.getElementById('cycleChart'),{
+ type:'bar',
+ data:{
+  labels,
+  datasets:[{
+   label:'cykle',
+   data:cyc,
+   backgroundColor:colors,
+   borderColor:colors,
+   borderWidth:1
+  }]
+ }
+});
+
+effChart=new Chart(document.getElementById('effChart'),{
+ type:'bar',
+ data:{
+  labels,
+  datasets:[{
+   label:'km/cykl',
+   data:eff,
+   backgroundColor:colors,
+   borderColor:colors,
+   borderWidth:1
+  }]
+ }
+});
 renderBatteryConfigForms();
 }
 render();
