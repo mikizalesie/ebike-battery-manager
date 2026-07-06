@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 10h
+VERSION TEST 05/07/2026 11
 </div>
 
 
@@ -811,8 +811,12 @@ function calculateBatteryHealth(index){
  const b = db.batteries[index] || {};
 
  const km = batteryKm(index);
- const cy = batteryCycles(index);
- const ef = cy > 0 ? km / cy : 0;
+const cy = batteryCycles(index);
+
+const routeStats = batteryRouteStats(index);
+const adjustedKm = routeStats.adjustedKm || km;
+
+const ef = cy > 0 ? adjustedKm / cy : 0;
 
  const batteryCharges = db.charges.filter(c => Number(c.battery) === index);
  const batteryRides = db.rides.filter(r => Number(r.battery) === index);
@@ -1092,6 +1096,34 @@ function updateRouteLabels(){
 }
 
 
+function batteryRouteStats(index){
+
+ const rides = db.rides.filter(r => Number(r.battery) === index);
+
+ let realKm = 0;
+ let adjustedKm = 0;
+ let weightedFactorSum = 0;
+
+ rides.forEach(r => {
+
+   const distance = Number(r.distance || 0);
+   const factor = Number(r.routeFactor || 1);
+
+   realKm += distance;
+   adjustedKm += distance * factor;
+   weightedFactorSum += factor * distance;
+
+ });
+
+ const avgFactor = realKm > 0 ? weightedFactorSum / realKm : 1;
+
+ return {
+   realKm,
+   adjustedKm,
+   avgFactor
+ };
+}
+
 
 function render(){
  startOdo.value=db.startOdo??'';
@@ -1106,9 +1138,14 @@ function render(){
  db.batteries.forEach((b,i)=>{
 if(!b.color) b.color = '#22C55E';
    opts+=`<option value="${i}">${b.name}</option>`;
-   const km=batteryKm(i);
-   const cy=batteryCycles(i);
-   const ef=cy>0?km/cy:0;
+const km = batteryKm(i);
+const cy = batteryCycles(i);
+const ef = cy > 0 ? km / cy : 0;
+
+const routeStats = batteryRouteStats(i);
+const adjustedKm = routeStats.adjustedKm;
+const avgRouteFactor = routeStats.avgFactor;
+const adjustedEf = cy > 0 ? adjustedKm / cy : 0;
 
 const batteryColor = b.color || '#22C55E';
 
@@ -1128,10 +1165,12 @@ if(km > maxKm){
   maxIdx = i;
 }
 
-if(ef > maxEff){
-  maxEff = ef;
+if(adjustedEf > maxEff){
+  maxEff = adjustedEf;
   maxEffIdx = i;
 }
+
+
    labels.push(b.name);
 kms.push(km);
 cyc.push(cy);
@@ -1183,6 +1222,27 @@ ${b.manufacturer || 'Producent nieuzupełniony'} ${b.model || ''}
 <hr style="border:0;border-top:1px solid #2b3a55;margin:16px 0">
 
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+
+<hr style="border:0;border-top:1px solid #2b3a55;margin:16px 0">
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;font-size:13px">
+
+<div>
+<div style="color:#94A3B8">Śr. trudność tras</div>
+<b>${avgRouteFactor.toFixed(2)}x</b>
+</div>
+
+<div>
+<div style="color:#94A3B8">Ekwiwalent trasy</div>
+<b>${adjustedKm.toFixed(0)} km</b>
+</div>
+
+<div>
+<div style="color:#94A3B8">Km/cykl skoryg.</div>
+<b>${adjustedEf > 0 ? adjustedEf.toFixed(0) : '-'}</b>
+</div>
+
+</div>
 
 <div>
 <div style="font-size:22px">📏</div>
@@ -1299,15 +1359,33 @@ document.getElementById("heroStats").innerHTML = "";
  <div>Najwydajniejsza</div>
 </div>`;
 
- rides.innerHTML='<tr><th>Data</th><th>Bateria</th><th>ODO</th><th>Dystans</th></tr>';
+rides.innerHTML='<tr><th>Data</th><th>Bateria</th><th>ODO</th><th>Dystans</th><th>Trasa</th><th>Profil</th></tr>';
 
 [...db.rides].reverse().forEach(r=>{
+
  const bat = db.batteries[r.battery] || {};
  const color = bat.color || '#22C55E';
+
+ const routeFactor = r.routeFactor ? Number(r.routeFactor) : null;
+ const routeDifficulty = r.routeDifficulty || (routeFactor ? getRouteDifficultyText(routeFactor) : '-');
+
+ let routeProfile = '-';
+
+ if(r.route){
+   routeProfile = `
+   <div style="font-size:12px;color:#94A3B8;line-height:1.4">
+     ⛰️ Podjazdy: ${r.route.hills || 0}%<br>
+     💨 Wiatr: ${r.route.wind || 50}%<br>
+     🌲 Teren: ${r.route.surface || 0}%<br>
+     🚦 Start-stop: ${r.route.stopStart || 0}%<br>
+     ⚙️ Wspomaganie: ${r.route.assist || 50}%
+   </div>`;
+ }
 
  rides.innerHTML += `
  <tr>
    <td>${r.date}</td>
+
    <td>
      <span style="
        display:inline-block;
@@ -1320,11 +1398,19 @@ document.getElementById("heroStats").innerHTML = "";
      "></span>
      ${bat.name || 'Bateria'}
    </td>
+
    <td>${r.odo}</td>
-   <td>${Number(r.distance).toFixed(1)} km</td>
+
+   <td>${Number(r.distance || 0).toFixed(1)} km</td>
+
+   <td>
+     <b>${routeFactor ? routeFactor.toFixed(2) + 'x' : '-'}</b><br>
+     <span style="font-size:12px;color:#94A3B8">${routeDifficulty}</span>
+   </td>
+
+   <td>${routeProfile}</td>
  </tr>`;
 });
-
  charges.innerHTML='<tr><th>Data</th><th>Bateria</th><th>Przed</th><th>Po</th><th>Cykl</th></tr>';
 
 [...db.charges].reverse().forEach(c=>{
