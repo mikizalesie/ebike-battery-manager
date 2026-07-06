@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 10c
+VERSION TEST 05/07/2026 10d
 </div>
 
 
@@ -818,16 +818,18 @@ const maxCycles = Number(b.maxCycles || 800);
 const remainingCycles = Math.max(0, maxCycles - cy);
 const estimatedKmLeft = ef > 0 ? remainingCycles * ef : 0;
 
-totalKm+=km; 
-totalCycles+=cy;
+totalKm += km; 
+totalCycles += cy;
 
-if(km>maxKm){maxKm=km;maxIdx=i;}
-if(ef>maxEff){maxEff=ef;maxEffIdx=i;}
+if(km > maxKm){
+  maxKm = km;
+  maxIdx = i;
+}
 
-   totalKm+=km; totalCycles+=cy;
-   if(km>maxKm){maxKm=km;maxIdx=i;}
-   if(ef>maxEff){maxEff=ef;maxEffIdx=i;}
-
+if(ef > maxEff){
+  maxEff = ef;
+  maxEffIdx = i;
+}
    labels.push(b.name);
 kms.push(km);
 cyc.push(cy);
