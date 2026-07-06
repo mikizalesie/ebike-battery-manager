@@ -925,6 +925,23 @@ function updateChargeSliderLabels(){
 }
 
 
+function formatChargeLevel(charge, value){
+
+ if(value === undefined || value === null || value === ''){
+   return '-';
+ }
+
+ const val = Number(value);
+
+ // Nowy system procentowy
+ if(charge.scale === 'percent' || charge.scaleMax === 100){
+   return val + '%';
+ }
+
+ // Stare wpisy z systemu 0/10 pokazujemy jako procenty
+ return (val * 10) + '%';
+}
+
 
 function render(){
  startOdo.value=db.startOdo??'';
@@ -1179,8 +1196,8 @@ document.getElementById("heroStats").innerHTML = "";
      "></span>
      ${bat.name || 'Bateria'}
    </td>
-   <td>${c.before !== undefined ? c.before + '/10' : '-'}</td>
-   <td>${c.after !== undefined ? c.after + '/10' : '-'}</td>
+<td>${formatChargeLevel(c, c.before)}</td>
+<td>${formatChargeLevel(c, c.after)}</td>
    <td>${Number(c.cycle).toFixed(2)}</td>
  </tr>`;
 });
