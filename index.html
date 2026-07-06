@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 10d
+VERSION TEST 05/07/2026 10e
 </div>
 
 
@@ -313,12 +313,20 @@ Battery Analytics & Lifecycle Tracking
 <table id="charges"></table>
 </div>
 
-</div></div><div id="adminPage" style="display:none"><div class="card">
+</div></div>
+
+<div id="adminPage" style="display:none">
+
+<div class="card">
+
 <button onclick="unlockConfig()">🔓 Konfiguracja baterii</button>
+
 <div id="cfg" style="display:none">
-ODO początkowe: <input id="startOdo" type="number">
-Liczba baterii:
-Liczba baterii:
+
+<label>ODO początkowe:</label>
+<input id="startOdo" type="number">
+
+<label>Liczba baterii:</label>
 <select id="batteryCount" onchange="updateBatteryCountPreview()">
   <option>1</option>
   <option>2</option>
@@ -329,12 +337,37 @@ Liczba baterii:
 <div id="batteryConfigForms"></div>
 
 <button onclick="saveConfig()">Zapisz</button>
+
 </div>
-</div><div class="card"><h2>Administracja</h2>
+
+</div>
+
+<div class="card">
+
+<h2>Administracja</h2>
+
 <button onclick="exportData()">💾 Eksport danych</button>
+
 <button onclick="document.getElementById('importFile').click()">📂 Import danych</button>
+
 <input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)">
+
 <button onclick="resetApp()">🗑 Reset aplikacji</button>
+
+<hr style="border:0;border-top:1px solid #2b3a55;margin:18px 0">
+
+<h3>🛠️ Korekta danych</h3>
+
+<button onclick="deleteLastRide()" style="margin-right:10px;margin-bottom:10px">
+↩️ Usuń ostatni przejazd
+</button>
+
+<button onclick="deleteLastCharge()" style="background:linear-gradient(135deg,#F59E0B,#D97706);margin-bottom:10px">
+↩️ Usuń ostatnie ładowanie
+</button>
+
+</div>
+
 </div>
 
 </div>
@@ -790,6 +823,68 @@ function batteryAgeText(dateStr){
 
  return years + ' lat ' + months + ' mies.';
 }
+
+function deleteLastRide(){
+
+ if(!db.rides || db.rides.length === 0){
+   alert('Brak przejazdów do usunięcia.');
+   return;
+ }
+
+ const lastRide = db.rides[db.rides.length - 1];
+ const battery = db.batteries[lastRide.battery] || {};
+
+ const confirmDelete = confirm(
+   'Czy na pewno chcesz usunąć ostatni przejazd?\n\n' +
+   'Bateria: ' + (battery.name || 'Bateria') + '\n' +
+   'Data: ' + (lastRide.date || '-') + '\n' +
+   'ODO: ' + (lastRide.odo || '-') + '\n' +
+   'Dystans: ' + Number(lastRide.distance || 0).toFixed(1) + ' km\n\n' +
+   'Tej operacji nie będzie można cofnąć.'
+ );
+
+ if(!confirmDelete) return;
+
+ db.rides.pop();
+
+ save();
+ render();
+
+ alert('Ostatni przejazd został usunięty.');
+}
+
+
+function deleteLastCharge(){
+
+ if(!db.charges || db.charges.length === 0){
+   alert('Brak ładowań do usunięcia.');
+   return;
+ }
+
+ const lastCharge = db.charges[db.charges.length - 1];
+ const battery = db.batteries[lastCharge.battery] || {};
+
+ const confirmDelete = confirm(
+   'Czy na pewno chcesz usunąć ostatnie ładowanie?\n\n' +
+   'Bateria: ' + (battery.name || 'Bateria') + '\n' +
+   'Data: ' + (lastCharge.date || '-') + '\n' +
+   'Przed ładowaniem: ' + (lastCharge.before !== undefined ? lastCharge.before + '/10' : '-') + '\n' +
+   'Po ładowaniu: ' + (lastCharge.after !== undefined ? lastCharge.after + '/10' : '-') + '\n' +
+   'Dodane cykle: ' + Number(lastCharge.cycle || 0).toFixed(2) + '\n\n' +
+   'Tej operacji nie będzie można cofnąć.'
+ );
+
+ if(!confirmDelete) return;
+
+ db.charges.pop();
+
+ save();
+ render();
+
+ alert('Ostatnie ładowanie zostało usunięte.');
+}
+
+
 
 function render(){
  startOdo.value=db.startOdo??'';
