@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 10g
+VERSION TEST 05/07/2026 10h
 </div>
 
 
@@ -273,6 +273,52 @@ Battery Analytics & Lifecycle Tracking
 <h2>Dodaj przejazd</h2>
 <select id="rideBattery"></select>
 <input id="rideOdo" type="number" placeholder="Aktualny ODO">
+
+<hr style="border:0;border-top:1px solid #2b3a55;margin:18px 0">
+
+<h3>🌍 Profil trasy</h3>
+
+<div style="margin-bottom:14px">
+<label><b>Podjazdy: <span id="routeHillsValue">0%</span></b></label>
+<div style="font-size:12px;color:#94A3B8">0% płasko / 100% dużo pod górę</div>
+<input id="routeHills" type="range" min="0" max="100" step="5" value="0" oninput="updateRouteLabels()">
+</div>
+
+<div style="margin-bottom:14px">
+<label><b>Wiatr: <span id="routeWindValue">50%</span></b></label>
+<div style="font-size:12px;color:#94A3B8">0% z wiatrem / 50% neutralnie / 100% pod wiatr</div>
+<input id="routeWind" type="range" min="0" max="100" step="5" value="50" oninput="updateRouteLabels()">
+</div>
+
+<div style="margin-bottom:14px">
+<label><b>Nawierzchnia: <span id="routeSurfaceValue">0%</span></b></label>
+<div style="font-size:12px;color:#94A3B8">0% asfalt / 50% szuter / 100% las i teren</div>
+<input id="routeSurface" type="range" min="0" max="100" step="5" value="0" oninput="updateRouteLabels()">
+</div>
+
+<div style="margin-bottom:14px">
+<label><b>Jazda miejska / start-stop: <span id="routeStopStartValue">0%</span></b></label>
+<div style="font-size:12px;color:#94A3B8">0% płynnie / 100% częste hamowanie i ruszanie</div>
+<input id="routeStopStart" type="range" min="0" max="100" step="5" value="0" oninput="updateRouteLabels()">
+</div>
+
+<div style="margin-bottom:14px">
+<label><b>Tryb wspomagania: <span id="routeAssistValue">50%</span></b></label>
+<div style="font-size:12px;color:#94A3B8">0% Eco / 50% Normal / 100% Turbo</div>
+<input id="routeAssist" type="range" min="0" max="100" step="5" value="50" oninput="updateRouteLabels()">
+</div>
+
+<div class="card" style="background:#111827;margin-top:12px">
+<div style="color:#94A3B8;font-size:13px">Szacowana trudność trasy</div>
+<div style="font-size:26px;font-weight:bold;color:#0A84FF">
+<span id="routeFactorValue">1.00</span>x
+</div>
+<div id="routeDifficultyText" style="font-size:13px;color:#94A3B8">Trasa łatwa</div>
+</div>
+
+
+
+
 <button onclick="addRide()">Zapisz przejazd</button>
 </div>
 
@@ -503,19 +549,55 @@ if(purchaseDate) b.purchaseDate = purchaseDate.value;
 }
 
 function addRide(){
- const odo=Number(rideOdo.value);
- const bat=Number(rideBattery.value);
- let dist=0;
 
- if(db.rides.length===0){
-   dist=(db.startOdo!==null)?Math.max(0,odo-db.startOdo):0;
-   if(db.startOdo===null) db.startOdo=odo;
+ const odo = Number(rideOdo.value);
+ const bat = Number(rideBattery.value);
+ let dist = 0;
+
+ if(db.rides.length === 0){
+   dist = (db.startOdo !== null) ? Math.max(0, odo - db.startOdo) : 0;
+
+   if(db.startOdo === null){
+     db.startOdo = odo;
+   }
+
  } else {
-   dist=Math.max(0,odo-db.rides[db.rides.length-1].odo);
+   dist = Math.max(0, odo - db.rides[db.rides.length - 1].odo);
  }
 
- db.rides.push({date:new Date().toLocaleString(),battery:bat,odo,distance:dist});
+ const route = {
+   hills: Number(document.getElementById('routeHills')?.value || 0),
+   wind: Number(document.getElementById('routeWind')?.value || 50),
+   surface: Number(document.getElementById('routeSurface')?.value || 0),
+   stopStart: Number(document.getElementById('routeStopStart')?.value || 0),
+   assist: Number(document.getElementById('routeAssist')?.value || 50)
+ };
+
+ const routeFactor = calculateRouteFactor(route);
+
+ db.rides.push({
+   date: new Date().toLocaleString(),
+   battery: bat,
+   odo: odo,
+   distance: dist,
+   route: route,
+   routeFactor: routeFactor,
+   routeDifficulty: getRouteDifficultyText(routeFactor)
+ });
+
  save();
+
+ rideOdo.value = '';
+
+ if(document.getElementById('routeHills')) routeHills.value = 0;
+ if(document.getElementById('routeWind')) routeWind.value = 50;
+ if(document.getElementById('routeSurface')) routeSurface.value = 0;
+ if(document.getElementById('routeStopStart')) routeStopStart.value = 0;
+ if(document.getElementById('routeAssist')) routeAssist.value = 50;
+
+ updateRouteLabels();
+
+ render();
 }
 
 function addCharge(){
@@ -940,6 +1022,73 @@ function formatChargeLevel(charge, value){
 
  // Stare wpisy z systemu kresek 0/10
  return (val * 10) + '%';
+}
+
+
+function calculateRouteFactor(route){
+
+ const hills = Number(route.hills || 0);
+ const wind = Number(route.wind || 50);
+ const surface = Number(route.surface || 0);
+ const stopStart = Number(route.stopStart || 0);
+ const assist = Number(route.assist || 50);
+
+ let factor = 1;
+
+ // Podjazdy mocno zwiększają zużycie energii
+ factor += hills * 0.0035;
+
+ // Wiatr: poniżej 50 lekko pomaga, powyżej 50 utrudnia
+ factor += (wind - 50) * 0.002;
+
+ // Las, szuter, teren zwiększają opory toczenia
+ factor += surface * 0.002;
+
+ // Start-stop zwiększa zużycie
+ factor += stopStart * 0.0015;
+
+ // Mocniejsze wspomaganie szybciej zużywa baterię
+ factor += (assist - 50) * 0.002;
+
+ // Bezpieczne ograniczenie
+ factor = Math.max(0.80, Math.min(2.00, factor));
+
+ return factor;
+}
+
+function getRouteDifficultyText(factor){
+
+ if(factor < 1.10) return 'Trasa łatwa';
+ if(factor < 1.30) return 'Trasa umiarkowana';
+ if(factor < 1.55) return 'Trasa trudna';
+ return 'Trasa bardzo trudna';
+}
+
+function updateRouteLabels(){
+
+ const route = {
+   hills: Number(routeHills?.value || 0),
+   wind: Number(routeWind?.value || 50),
+   surface: Number(routeSurface?.value || 0),
+   stopStart: Number(routeStopStart?.value || 0),
+   assist: Number(routeAssist?.value || 50)
+ };
+
+ if(document.getElementById('routeHillsValue')) routeHillsValue.innerText = route.hills + '%';
+ if(document.getElementById('routeWindValue')) routeWindValue.innerText = route.wind + '%';
+ if(document.getElementById('routeSurfaceValue')) routeSurfaceValue.innerText = route.surface + '%';
+ if(document.getElementById('routeStopStartValue')) routeStopStartValue.innerText = route.stopStart + '%';
+ if(document.getElementById('routeAssistValue')) routeAssistValue.innerText = route.assist + '%';
+
+ const factor = calculateRouteFactor(route);
+
+ if(document.getElementById('routeFactorValue')){
+   routeFactorValue.innerText = factor.toFixed(2);
+ }
+
+ if(document.getElementById('routeDifficultyText')){
+   routeDifficultyText.innerText = getRouteDifficultyText(factor);
+ }
 }
 
 
