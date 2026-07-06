@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 10e
+VERSION TEST 05/07/2026 10f
 </div>
 
 
@@ -279,19 +279,33 @@ Battery Analytics & Lifecycle Tracking
 <div class="card">
 <h2>Dodaj ładowanie</h2>
 
-<div style="margin-bottom:12px">
+<div style="margin-bottom:16px">
 <label><b>Bateria</b></label><br>
 <select id="chargeBattery"></select>
 </div>
 
-<div style="margin-bottom:12px">
-<label><b>Przed ładowaniem</b></label><br>
-<select id="before"></select>
+<div style="margin-bottom:18px">
+<label><b>Przed ładowaniem: <span id="beforeValue">0%</span></b></label>
+<input 
+ id="before" 
+ type="range" 
+ min="0" 
+ max="100" 
+ step="1" 
+ value="0"
+ oninput="updateChargeSliderLabels()">
 </div>
 
-<div style="margin-bottom:12px">
-<label><b>Po ładowaniu</b></label><br>
-<select id="after"></select>
+<div style="margin-bottom:18px">
+<label><b>Po ładowaniu: <span id="afterValue">100%</span></b></label>
+<input 
+ id="after" 
+ type="range" 
+ min="0" 
+ max="100" 
+ step="1" 
+ value="100"
+ oninput="updateChargeSliderLabels()">
 </div>
 
 <button onclick="addCharge()">Zapisz ładowanie</button>
@@ -410,12 +424,7 @@ alert("NOWA SAVE");
 
 }
 
-function fillBars(){
- let h='<option value="">wybierz</option>';
- for(let i=0;i<=10;i++) h+=`<option value="${i}">${i}/10</option>`;
- before.innerHTML=h; after.innerHTML=h;
-}
-fillBars();
+updateChargeSliderLabels();
 
 function unlockConfig(){
 
@@ -510,24 +519,38 @@ function addRide(){
 }
 
 function addCharge(){
- const b=before.value;
- const a=after.value;
 
- if(b==='' || a==='') return alert('Wybierz stan przed i po ładowaniu');
+ const b = before.value;
+ const a = after.value;
 
- const beforeVal=Number(b);
- const afterVal=Number(a);
+ if(b === '' || a === ''){
+   return alert('Wybierz stan przed i po ładowaniu');
+ }
 
- if(afterVal<=beforeVal) return alert('Stan po ładowaniu musi być większy');
+ const beforeVal = Number(b);
+ const afterVal = Number(a);
 
-db.charges.push({
-   date:new Date().toLocaleString(),
-   battery:Number(chargeBattery.value),
+ if(afterVal <= beforeVal){
+   return alert('Stan po ładowaniu musi być większy');
+ }
+
+ db.charges.push({
+   date: new Date().toLocaleString(),
+   battery: Number(chargeBattery.value),
    before: beforeVal,
    after: afterVal,
-   cycle:(afterVal-beforeVal)/10
-});
+   scale: 'percent',
+   scaleMax: 100,
+   cycle: (afterVal - beforeVal) / 100
+ });
+
  save();
+
+ before.value = 0;
+ after.value = 100;
+ updateChargeSliderLabels();
+
+ render();
 }
 
 function batteryKm(id){return db.rides.filter(r=>r.battery===id).reduce((s,r)=>s+r.distance,0);}
@@ -882,6 +905,23 @@ function deleteLastCharge(){
  render();
 
  alert('Ostatnie ładowanie zostało usunięte.');
+}
+
+function updateChargeSliderLabels(){
+
+ const beforeInput = document.getElementById('before');
+ const afterInput = document.getElementById('after');
+
+ const beforeLabel = document.getElementById('beforeValue');
+ const afterLabel = document.getElementById('afterValue');
+
+ if(beforeInput && beforeLabel){
+   beforeLabel.innerText = beforeInput.value + '%';
+ }
+
+ if(afterInput && afterLabel){
+   afterLabel.innerText = afterInput.value + '%';
+ }
 }
 
 
