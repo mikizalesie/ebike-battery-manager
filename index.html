@@ -228,7 +228,7 @@ body{
 <body>
 
 <div style="color:red;font-size:30px">
-VERSION TEST 05/07/2026 10f
+VERSION TEST 05/07/2026 10g
 </div>
 
 
@@ -891,8 +891,8 @@ function deleteLastCharge(){
    'Czy na pewno chcesz usunąć ostatnie ładowanie?\n\n' +
    'Bateria: ' + (battery.name || 'Bateria') + '\n' +
    'Data: ' + (lastCharge.date || '-') + '\n' +
-   'Przed ładowaniem: ' + (lastCharge.before !== undefined ? lastCharge.before + '/10' : '-') + '\n' +
-   'Po ładowaniu: ' + (lastCharge.after !== undefined ? lastCharge.after + '/10' : '-') + '\n' +
+   'Przed ładowaniem: ' + formatChargeLevel(lastCharge, lastCharge.before) + '\n' +
+'Po ładowaniu: ' + formatChargeLevel(lastCharge, lastCharge.after) + '\n' +
    'Dodane cykle: ' + Number(lastCharge.cycle || 0).toFixed(2) + '\n\n' +
    'Tej operacji nie będzie można cofnąć.'
  );
@@ -934,13 +934,14 @@ function formatChargeLevel(charge, value){
  const val = Number(value);
 
  // Nowy system procentowy
- if(charge.scale === 'percent' || charge.scaleMax === 100){
+ if(charge.scale === 'percent' || charge.scaleMax === 100 || val > 10){
    return val + '%';
  }
 
- // Stare wpisy z systemu 0/10 pokazujemy jako procenty
+ // Stare wpisy z systemu kresek 0/10
  return (val * 10) + '%';
 }
+
 
 
 function render(){
